@@ -34,9 +34,37 @@ eraserColor = (0, 0, 0) # black
 brushThickness = 10
 eraserThickness = 80
 
+# Detection points for each color and eraser in the menu image
+maxMenuHeight = 125
+whiteMinDetect_x = 180
+whiteMaxDetect_x = 310
+blueMinDetect_x = 440
+blueMaxDetect_x = 495
+redMinDetect_x = 620
+redMaxDetect_x = 690
+greenMinDetect_x = 840
+greenMaxDetect_x = 890
+eraserMinDetect_x = 1035
+eraserMaxDetect_x = 1075
+
+# Line that are created above the selected color or eraser for indication
+whiteLineMin_x = 250
+whiteLineMax_x = 290
+blueLineMin_x = 470
+blueLineMax_x = 510
+redLineMin_x = 660
+redLineMax_x = 700
+greenLineMin_x = 860
+greenLineMax_x = 900
+eraserLineMin_x = 1070
+eraserLineMax_x = 1110
+line_y = 10
+
+# Variable to store previous points when drawing
 prev_x, prev_y = 0, 0
 
 imageCanvas = np.zeros((720, 1280, 3), np.uint8)
+# Canvas is a black image. 8 bits: 0-255
 
 while True:
     success, image = video_cap.read()
@@ -85,7 +113,7 @@ while True:
                     prev_x, prev_y = 0, 0
 
             # Only draw if below the menu area (y > 125)
-            if indexTip_y > 125:
+            if indexTip_y > maxMenuHeight:  # was 125 originally
                 cv2.circle(image, (indexTip_x, indexTip_y), 15, drawColor, cv2.FILLED)
 
                 # The very 1st iteration, don't want to create a line from (0,0) to the index finger tip
@@ -114,45 +142,45 @@ while True:
         elif isIndexFingerOpen and isMiddleFingerOpen:
             modeList.append("select")
 
-            if (indexTip_y and middleTip_y) < 125:
+            if (indexTip_y and middleTip_y) < maxMenuHeight: # was 125 originally
     
                 # White: 180 - 310
-                if 180 < (indexTip_x or middleTip_x) < 310:
+                if whiteMinDetect_x < (indexTip_x or middleTip_x) < whiteMaxDetect_x: 
                     selection = "white"
                     drawColor = (255, 255, 255)
                     
                 # Blue: 440 - 495
-                elif 440 < (indexTip_x or middleTip_x) < 495:
+                elif blueMinDetect_x < (indexTip_x or middleTip_x) < blueMaxDetect_x:
                     selection = "blue"
                     drawColor = (255, 0, 0)
 
                 # Red: 620 - 690
-                elif 620 < (indexTip_x or middleTip_x) < 690:
+                elif redMinDetect_x < (indexTip_x or middleTip_x) < redMaxDetect_x:
                     selection = "red"
                     drawColor = (0, 0, 255)
 
                 # Green: 840 - 890
-                elif 840 < (indexTip_x or middleTip_x) < 890:
+                elif greenMinDetect_x < (indexTip_x or middleTip_x) < greenMaxDetect_x:
                     selection = "green"
                     drawColor = (0, 255, 0)
 
                 # Eraser: 1035 - 1075
-                elif 1035 < (indexTip_x or middleTip_x) < 1075:
+                elif eraserMinDetect_x < (indexTip_x or middleTip_x) < eraserMaxDetect_x:
                     selection = "eraser"
                     drawColor = (0, 0, 0)
 
     # create a line above the selected color or eraser for indication
     match selection:
-        case "white":   # 180 - 310
-            cv2.line(image, (250, 10), (290, 10), (0, 0, 0), 2)
-        case "blue":    # 440 - 495
-            cv2.line(image, (470, 10), (510, 10), (0, 0, 0), 2)
-        case "red": # 620 - 690
-            cv2.line(image, (660, 10), (700, 10), (0, 0, 0), 2)
-        case "green":   # 840 - 890
-            cv2.line(image, (860, 10), (900, 10), (0, 0, 0), 2)
+        case "white":
+            cv2.line(image, (whiteLineMin_x, line_y), (whiteLineMax_x, line_y), (0, 0, 0), 2)
+        case "blue":
+            cv2.line(image, (blueLineMin_x, line_y), (blueLineMax_x, line_y), (0, 0, 0), 2)
+        case "red":
+            cv2.line(image, (redLineMin_x, line_y), (redLineMax_x, line_y), (0, 0, 0), 2)
+        case "green":
+            cv2.line(image, (greenLineMin_x, line_y), (greenLineMax_x, line_y), (0, 0, 0), 2)
         case "eraser":
-            cv2.line(image, (1070, 10), (1110, 10), (0, 0, 0), 2)
+            cv2.line(image, (eraserLineMin_x, line_y), (eraserLineMax_x, line_y), (0, 0, 0), 2)
 
     # In the canvas image, where there is black -> white, colored -> black
     # then overlay the canvas image onto the webcam image
@@ -163,8 +191,6 @@ while True:
     image = cv2.bitwise_and(image, imageInverse)
     image = cv2.bitwise_or(image, imageCanvas)
 
-    # Combine both image and imageCanvas
-    # image = cv2.addWeighted(image, 0.5, imageCanvas, 0.5, 0)
     cv2.imshow("Virtual Painter", image)
-    # cv2.imshow("Canvas", imageCanvas)
+    cv2.imshow("Canvas", imageCanvas)
     cv2.waitKey(1)
